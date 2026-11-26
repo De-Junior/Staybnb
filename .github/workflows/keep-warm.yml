@@ -1,0 +1,31 @@
+name: Keep demo warm
+
+# The live demo runs on Azure's free tier, which puts the app to sleep after about 20 minutes
+# without a request. The first visit after that can take over a minute. Requesting the home page
+# every 10 minutes keeps it awake. The home page also reads from the database, so that stays
+# awake too.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Request the home page
+        run: |
+          # Retry once or twice in case the app is waking up. A failure here should not fail the
+          # workflow, because that would email a failure notice every 10 minutes while the site is down.
+          if curl --fail --silent --show-error --output /dev/null \
+               --max-time 120 --retry 2 --retry-delay 15 --retry-all-errors \
+               --write-out "HTTP %{http_code} in %{time_total}s\n" \
+               https://staybnb-4hv0z.azurewebsites.net/; then
+            echo "Demo is awake."
+          else
+            echo "::warning::The demo did not respond. Check the Azure app."
+          fi
