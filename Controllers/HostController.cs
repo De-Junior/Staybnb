@@ -14,7 +14,8 @@ public class HostController(
     ApplicationDbContext db,
     IFileStorage storage,
     IActivityLogger activity,
-    INotificationService notifications) : AppController
+    INotificationService notifications,
+    BookingApprovalService approvals) : AppController
 {
     private const int MaxImages = 10;
 
@@ -206,24 +207,25 @@ public class HostController(
         var booking = await LoadBookingAsync(id);
         if (booking is null) return NotFound();
 
-        if (booking.Status != BookingStatus.Pending)
-            Error("Only pending requests can be approved.");
-        else if (booking.CheckInDate.Date < DateTime.Today)
-            Error("This request's check in date has passed. Reject it instead.");
-        else if (await db.Bookings.Overlapping(booking.PropertyId, booking.CheckInDate, booking.CheckOutDate).AnyAsync())
-            Error("These dates overlap with a booking you have already approved.");
-        else
+        switch (await approvals.ApproveAsync(booking))
         {
-            booking.Status = BookingStatus.Approved;
-            if (booking.Payment is not null) booking.Payment.Status = PaymentStatus.Paid;
-            await db.SaveChangesAsync();
+            case ApprovalOutcome.NotPending:
+                Error("Only pending requests can be approved.");
+                break;
+            case ApprovalOutcome.CheckInPassed:
+                Error("This request's check in date has passed. Reject it instead.");
+                break;
+            case ApprovalOutcome.DatesOverlap:
+                Error("These dates overlap with a booking you have already approved.");
+                break;
+            default:
+                await LogStatusChangeAsync(booking, BookingStatus.Pending);
+                await notifications.NotifyAsync(booking.GuestId, "Booking Approved",
+                    $"Your stay at '{booking.Property.Title}' ({booking.CheckInDate:dd MMM} to {booking.CheckOutDate:dd MMM}) is confirmed. Complete online check in before you arrive.",
+                    NotificationType.Success, $"/Bookings/Details/{booking.Id}");
 
-            await LogStatusChangeAsync(booking, BookingStatus.Pending);
-            await notifications.NotifyAsync(booking.GuestId, "Booking Approved",
-                $"Your stay at '{booking.Property.Title}' ({booking.CheckInDate:dd MMM} to {booking.CheckOutDate:dd MMM}) is confirmed. Complete online check in before you arrive.",
-                NotificationType.Success, $"/Bookings/Details/{booking.Id}");
-
-            Success($"Booking #{booking.Id} approved.");
+                Success($"Booking #{booking.Id} approved.");
+                break;
         }
 
         return RedirectToAction(nameof(Bookings));

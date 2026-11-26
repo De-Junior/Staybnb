@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Staybnb.Data;
 using Staybnb.Models;
 using Staybnb.Services;
@@ -41,6 +42,8 @@ builder.Services.AddScoped<IFileStorage, FileStorage>();
 builder.Services.AddScoped<IUnreadCounter, UnreadCounter>();
 builder.Services.AddScoped<BookingCalculator>();
 builder.Services.AddScoped<HostApplicationService>();
+builder.Services.AddScoped<BookingApprovalService>();
+builder.Services.TryAddSingleton(TimeProvider.System);
 
 builder.Services.AddControllersWithViews();
 
