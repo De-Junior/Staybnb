@@ -1,0 +1,58 @@
+@model EarningsViewModel
+@{
+    ViewData["Title"] = "Earnings";
+}
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#e6f6ec;color:#1e7a3c"><i class="bi bi-cash-stack"></i></div>
+            <div class="stat-value">@Fmt.Money(Model.Total, 2)</div>
+            <div class="stat-label">Total payouts (after service fee)</div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="table-wrap h-100">
+            <div class="p-3 fw-bold">By month of stay</div>
+            <table class="table table-clean">
+                <tbody>
+                    @if (Model.ByMonth.Count == 0)
+                    {
+                        <tr><td class="text-muted text-center py-3">No earnings yet</td></tr>
+                    }
+                    @foreach (var (month, amount) in Model.ByMonth)
+                    {
+                        <tr><td>@month</td><td class="text-end fw-semibold">@Fmt.Money(amount, 2)</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="table-wrap">
+    <div class="p-3 fw-bold">Paid bookings</div>
+    <div class="table-responsive">
+        <table class="table table-clean">
+            <thead><tr><th>Booking</th><th>Guest</th><th>Property</th><th>Stay</th><th class="text-end">Guest paid</th><th class="text-end">Service fee</th><th class="text-end">Your payout</th></tr></thead>
+            <tbody>
+                @if (Model.Bookings.Count == 0)
+                {
+                    <tr><td colspan="7" class="text-center text-muted py-4">Payments appear here once you approve bookings.</td></tr>
+                }
+                @foreach (var b in Model.Bookings)
+                {
+                    <tr>
+                        <td>#@b.Id</td>
+                        <td>@b.Guest.FullName</td>
+                        <td>@b.Property.Title</td>
+                        <td class="text-nowrap">@Fmt.Date(b.CheckInDate) to @Fmt.Date(b.CheckOutDate)</td>
+                        <td class="text-end">@Fmt.Money(b.TotalPrice, 2)</td>
+                        <td class="text-end text-muted">@Fmt.Money(b.ServiceFee, 2)</td>
+                        <td class="text-end fw-semibold">@Fmt.Money(b.TotalPrice - b.ServiceFee, 2)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

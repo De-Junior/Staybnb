@@ -1,0 +1,14 @@
+# Build output
+bin/
+obj/
+.vs/
+*.user
+*.suo
+
+# Files people upload while using the app: ID documents and property photos.
+# Never commit them; the app creates these folders when it runs.
+App_Data/documents/
+wwwroot/uploads/
+
+# Local settings overrides
+appsettings.*.local.json

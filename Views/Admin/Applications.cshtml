@@ -1,0 +1,45 @@
+@model List<HostApplication>
+@{
+    ViewData["Title"] = "Host Requests";
+    var current = ViewBag.Status as ApplicationStatus?;
+}
+
+<div class="filter-pills mb-3">
+    @foreach (var s in Enum.GetValues<ApplicationStatus>())
+    {
+        <a class="@(current == s ? "active" : "")" asp-action="Applications" asp-route-status="@s">@s</a>
+    }
+    <a class="@(current == null ? "active" : "")" asp-action="Applications" asp-route-status="all">All</a>
+</div>
+
+<div class="table-wrap">
+    <div class="table-responsive">
+        <table class="table table-clean">
+            <thead><tr><th>Property</th><th>Applicant</th><th>Location</th><th>Price</th><th>Applied</th><th>Status</th><th class="text-end"></th></tr></thead>
+            <tbody>
+                @if (Model.Count == 0)
+                {
+                    <tr><td colspan="7" class="text-center text-muted py-5">No applications</td></tr>
+                }
+                @foreach (var a in Model)
+                {
+                    var cover = a.Property.Images.OrderBy(i => i.DisplayOrder).FirstOrDefault();
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                @if (cover is not null) { <img src="@cover.ImageUrl" class="thumb" alt="" /> }
+                                <div><div class="fw-semibold">@a.Property.Title</div><div class="small text-muted">@a.Property.PropertyType &middot; @a.Property.Images.Count photo@(a.Property.Images.Count == 1 ? "" : "s")</div></div>
+                            </div>
+                        </td>
+                        <td><div>@a.ApplicationUser.FullName</div><div class="small text-muted">@a.ApplicationUser.Email</div></td>
+                        <td>@a.Property.City</td>
+                        <td class="text-nowrap">@Fmt.Money(a.Property.PricePerNight)</td>
+                        <td class="small text-nowrap">@Fmt.Stamp(a.AppliedAt)</td>
+                        <td><span class="@Fmt.Badge(a.Status)">@a.Status</span></td>
+                        <td class="text-end"><a class="btn @(a.Status == ApplicationStatus.Pending ? "btn-brand" : "btn-soft") btn-sm" asp-action="ApplicationDetails" asp-route-id="@a.Id">@(a.Status == ApplicationStatus.Pending ? "Review" : "View")</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

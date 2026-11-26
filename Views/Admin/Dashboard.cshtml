@@ -1,0 +1,109 @@
+@model AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard Overview";
+}
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card"><div class="stat-label">Total Users</div><div class="stat-value mt-2">@Model.TotalUsers</div><div class="stat-sub text-success">Registered accounts</div></div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <a class="text-decoration-none" asp-action="Applications">
+            <div class="stat-card"><div class="stat-label">Pending Host Apps</div><div class="stat-value mt-2 text-warning">@Model.PendingApplications</div><div class="stat-sub text-success">Require review</div></div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card"><div class="stat-label">Active Properties</div><div class="stat-value mt-2">@Model.ActiveProperties</div><div class="stat-sub text-success">Listings available</div></div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card"><div class="stat-label">Platform Revenue</div><div class="stat-value mt-2">@Fmt.Money(Model.PlatformRevenue)</div><div class="stat-sub text-success">Service fees from paid bookings</div></div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card"><div class="stat-label">Total Bookings</div><div class="stat-value mt-2">@Model.TotalBookings</div><div class="stat-sub text-success">@Model.PendingBookings pending</div></div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card"><div class="stat-label">Approved Hosts</div><div class="stat-value mt-2">@Model.ApprovedHosts</div><div class="stat-sub text-success">Active hosts</div></div>
+    </div>
+</div>
+
+<div class="table-wrap mb-4">
+    <div class="p-3 d-flex justify-content-between align-items-center">
+        <span class="fw-bold">Recent Activity</span>
+        <a asp-action="ActivityLogs" class="small">View all</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-clean">
+            <thead><tr><th>User</th><th>Action</th><th>Type</th><th>Date</th></tr></thead>
+            <tbody>
+                @foreach (var log in Model.RecentActivity)
+                {
+                    <tr>
+                        <td>
+                            @if (log.User is not null)
+                            {
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="initials">@Fmt.Initials(log.User.FirstName, log.User.LastName)</span>
+                                    <div><div class="fw-semibold">@log.User.FullName</div><div class="small text-muted">@log.User.Email</div></div>
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="text-muted">System / anonymous</span>
+                            }
+                        </td>
+                        <td>@log.Action<div class="small text-muted">@log.Details</div></td>
+                        <td><span class="badge-soft-secondary">@log.ActivityType</span></td>
+                        <td class="text-nowrap small">@Fmt.Stamp(log.CreatedAt)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-xl-6">
+        <div class="table-wrap">
+            <div class="p-3 fw-bold">Recent Host Applications</div>
+            <div class="table-responsive">
+                <table class="table table-clean">
+                    <thead><tr><th>Applicant</th><th>Date</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
+                    <tbody>
+                        @if (Model.RecentApplications.Count == 0) { <tr><td colspan="4" class="text-center text-muted py-4">No applications</td></tr> }
+                        @foreach (var a in Model.RecentApplications)
+                        {
+                            <tr>
+                                <td><div class="fw-semibold">@a.ApplicationUser.FullName</div><div class="small text-muted">@a.Property.Title</div></td>
+                                <td class="small text-nowrap">@Fmt.Date(a.AppliedAt)</td>
+                                <td><span class="@Fmt.Badge(a.Status)">@a.Status</span></td>
+                                <td class="text-end"><a asp-action="ApplicationDetails" asp-route-id="@a.Id" class="btn btn-soft btn-sm" title="View"><i class="bi bi-eye"></i></a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <div class="table-wrap">
+            <div class="p-3 fw-bold">Recent Bookings</div>
+            <div class="table-responsive">
+                <table class="table table-clean">
+                    <thead><tr><th>Guest</th><th>Dates</th><th>Status</th><th>Payment</th></tr></thead>
+                    <tbody>
+                        @if (Model.RecentBookings.Count == 0) { <tr><td colspan="4" class="text-center text-muted py-4">No bookings</td></tr> }
+                        @foreach (var b in Model.RecentBookings)
+                        {
+                            <tr>
+                                <td><div class="fw-semibold">@b.Guest.FullName</div><div class="small text-muted">@b.Property.Title</div></td>
+                                <td class="small text-nowrap">@b.CheckInDate.ToString("dd MMM")<br /><span class="text-muted">to @b.CheckOutDate.ToString("dd MMM")</span></td>
+                                <td><span class="@Fmt.Badge(b.Status)">@b.Status</span></td>
+                                <td>@if (b.Payment is not null) { <span class="@Fmt.Badge(b.Payment.Status)">@b.Payment.Status</span> }</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,18 @@
+@model PropertyFormViewModel
+@{
+    ViewData["Title"] = "Edit Property";
+}
+
+<div class="row justify-content-center">
+    <div class="col-xl-9">
+        <form asp-action="EditProperty" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data">
+            <partial name="_PropertyFormFields" model="Model" />
+            <div class="d-flex justify-content-end gap-2 mb-5">
+                <a class="btn btn-soft" asp-action="Properties">Cancel</a>
+                <button type="submit" class="btn btn-brand px-4">Save changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

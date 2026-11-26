@@ -1,0 +1,122 @@
+@model PropertyFormViewModel
+@{
+    var isEdit = Model.Id.HasValue;
+}
+<div asp-validation-summary="ModelOnly" class="alert alert-danger small"></div>
+
+<div class="panel mb-4">
+    <div class="panel-title"><span class="badge rounded-pill text-bg-dark me-2">1</span>Tell us about your place</div>
+    <div class="row g-3">
+        <div class="col-12">
+            <label asp-for="Title" class="form-label"></label>
+            <input asp-for="Title" class="form-control" placeholder="e.g. Cozy Forest Cabin" />
+            <span asp-validation-for="Title" class="text-danger small"></span>
+        </div>
+        <div class="col-12">
+            <label asp-for="Description" class="form-label"></label>
+            <textarea asp-for="Description" class="form-control" rows="5" placeholder="What makes your place special?"></textarea>
+            <span asp-validation-for="Description" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="PropertyType" class="form-label"></label>
+            <select asp-for="PropertyType" asp-items="Html.GetEnumSelectList<PropertyType>()" class="form-select"></select>
+        </div>
+        <div class="col-6 col-md-3">
+            <label asp-for="PricePerNight" class="form-label"></label>
+            <input asp-for="PricePerNight" class="form-control" type="number" step="0.01" min="1" />
+            <span asp-validation-for="PricePerNight" class="text-danger small"></span>
+        </div>
+        <div class="col-6 col-md-3">
+            <label asp-for="CleaningFee" class="form-label"></label>
+            <input asp-for="CleaningFee" class="form-control" type="number" step="0.01" min="0" />
+            <span asp-validation-for="CleaningFee" class="text-danger small"></span>
+        </div>
+    </div>
+</div>
+
+<div class="panel mb-4">
+    <div class="panel-title"><span class="badge rounded-pill text-bg-dark me-2">2</span>Where is it?</div>
+    <div class="row g-3">
+        <div class="col-12">
+            <label asp-for="Address" class="form-label"></label>
+            <input asp-for="Address" class="form-control" placeholder="Street address" />
+            <span asp-validation-for="Address" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="City" class="form-label"></label>
+            <input asp-for="City" class="form-control" />
+            <span asp-validation-for="City" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Country" class="form-label"></label>
+            <input asp-for="Country" class="form-control" />
+            <span asp-validation-for="Country" class="text-danger small"></span>
+        </div>
+    </div>
+</div>
+
+<div class="panel mb-4">
+    <div class="panel-title"><span class="badge rounded-pill text-bg-dark me-2">3</span>Share some basics</div>
+    <div class="row g-3">
+        <div class="col-6 col-md-3">
+            <label asp-for="MaxGuests" class="form-label"></label>
+            <input asp-for="MaxGuests" class="form-control" type="number" min="1" max="50" />
+            <span asp-validation-for="MaxGuests" class="text-danger small"></span>
+        </div>
+        <div class="col-6 col-md-3">
+            <label asp-for="Bedrooms" class="form-label"></label>
+            <input asp-for="Bedrooms" class="form-control" type="number" min="0" max="50" />
+            <span asp-validation-for="Bedrooms" class="text-danger small"></span>
+        </div>
+        <div class="col-6 col-md-3">
+            <label asp-for="Beds" class="form-label"></label>
+            <input asp-for="Beds" class="form-control" type="number" min="1" max="50" />
+            <span asp-validation-for="Beds" class="text-danger small"></span>
+        </div>
+        <div class="col-6 col-md-3">
+            <label asp-for="Bathrooms" class="form-label"></label>
+            <input asp-for="Bathrooms" class="form-control" type="number" min="0" max="50" />
+            <span asp-validation-for="Bathrooms" class="text-danger small"></span>
+        </div>
+    </div>
+
+    <div class="form-label mt-4">Amenities</div>
+    <div class="row g-2">
+        @foreach (var a in Model.AvailableAmenities)
+        {
+            <div class="col-6 col-md-4">
+                <label class="d-flex align-items-center gap-2 border rounded-3 px-3 py-2 h-100" style="cursor:pointer">
+                    <input type="checkbox" class="form-check-input m-0" name="AmenityIds" value="@a.Id" checked="@Model.AmenityIds.Contains(a.Id)" />
+                    <i class="bi @(a.IconClass ?? "bi-check2")"></i><span class="small">@a.Name</span>
+                </label>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="panel mb-4">
+    <div class="panel-title"><span class="badge rounded-pill text-bg-dark me-2">4</span>Add some photos</div>
+
+    @if (isEdit && Model.ExistingImages.Count > 0)
+    {
+        <p class="small text-muted mb-2">Tick a photo to remove it. The first photo is the cover image.</p>
+        <div class="d-flex flex-wrap gap-3 mb-3">
+            @foreach (var img in Model.ExistingImages)
+            {
+                <label class="text-center small" style="cursor:pointer">
+                    <img src="@img.ImageUrl" class="thumb-lg d-block mb-1" style="width:140px;height:100px" alt="Property photo" />
+                    <input type="checkbox" class="form-check-input" name="RemoveImageIds" value="@img.Id" checked="@Model.RemoveImageIds.Contains(img.Id)" /> Remove
+                </label>
+            }
+        </div>
+    }
+
+    <div class="upload-drop">
+        <i class="bi bi-images fs-2 text-muted"></i>
+        <p class="mb-2 small">@(isEdit ? "Upload more photos" : "Upload at least one photo. Applications without an image can't be submitted.")</p>
+        <input type="file" name="Images" id="Images" class="form-control" accept=".jpg,.jpeg,.png,.webp" multiple data-preview="#image-previews" @(isEdit ? "" : "required") />
+        <div class="form-text">JPG, PNG or WEBP, up to 5 MB each, maximum 10 photos.</div>
+        <div id="image-previews" class="image-previews justify-content-center"></div>
+    </div>
+    <span asp-validation-for="Images" class="text-danger small d-block mt-2"></span>
+</div>

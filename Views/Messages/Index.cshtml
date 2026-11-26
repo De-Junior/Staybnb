@@ -1,0 +1,90 @@
+@model MessagesViewModel
+@{
+    ViewData["Title"] = "Messages";
+}
+
+@if (Layout == "_Layout")
+{
+    <h1 class="h3 fw-bold mb-4">Messages</h1>
+}
+
+<div class="inbox">
+    <div class="inbox-list">
+        @if (Model.Conversations.Count == 0 && Model.SelectedUser is null)
+        {
+            <div class="p-4 text-center text-muted small">
+                <i class="bi bi-chat-square-text fs-2 d-block mb-2"></i>
+                No messages yet. Start a conversation from a listing or booking.
+            </div>
+        }
+        @if (Model.SelectedUser is not null && Model.Conversations.All(c => c.OtherUser.Id != Model.SelectedUser.Id))
+        {
+            <a class="inbox-item active" asp-action="Index" asp-route-with="@Model.SelectedUser.Id">
+                <span class="initials">@Fmt.Initials(Model.SelectedUser.FirstName, Model.SelectedUser.LastName)</span>
+                <div class="min-w-0 flex-grow-1 overflow-hidden">
+                    <div class="fw-semibold small">@Model.SelectedUser.FullName</div>
+                    <div class="preview">New conversation</div>
+                </div>
+            </a>
+        }
+        @foreach (var c in Model.Conversations)
+        {
+            var active = Model.SelectedUser?.Id == c.OtherUser.Id;
+            <a class="inbox-item @(active ? "active" : "") @(c.UnreadCount > 0 ? "unread" : "")" asp-action="Index" asp-route-with="@c.OtherUser.Id">
+                <span class="initials">@Fmt.Initials(c.OtherUser.FirstName, c.OtherUser.LastName)</span>
+                <div class="flex-grow-1 overflow-hidden">
+                    <div class="d-flex justify-content-between gap-2">
+                        <span class="fw-semibold small text-truncate">@c.OtherUser.FullName</span>
+                        <span class="text-muted text-nowrap" style="font-size:.7rem">@Fmt.Ago(c.LastMessage.Timestamp)</span>
+                    </div>
+                    <div class="d-flex justify-content-between gap-2">
+                        <span class="preview">@(c.LastMessage.SenderId == Model.CurrentUserId ? "You: " : "")@c.LastMessage.Content</span>
+                        @if (c.UnreadCount > 0) { <span class="side-badge">@c.UnreadCount</span> }
+                    </div>
+                </div>
+            </a>
+        }
+    </div>
+
+    <div class="thread">
+        @if (Model.SelectedUser is null)
+        {
+            <div class="m-auto text-center text-muted p-5">
+                <i class="bi bi-envelope-open fs-1 d-block mb-2"></i>
+                Select a conversation to read and reply.
+            </div>
+        }
+        else
+        {
+            <div class="thread-head">
+                <span class="initials">@Fmt.Initials(Model.SelectedUser.FirstName, Model.SelectedUser.LastName)</span>
+                <div>
+                    <div class="fw-semibold">@Model.SelectedUser.FullName</div>
+                    <div class="small text-muted">@Model.SelectedUser.Email</div>
+                </div>
+            </div>
+            <div class="thread-body" data-thread>
+                @if (Model.Thread.Count == 0)
+                {
+                    <div class="text-center text-muted small my-auto">Say hello to @Model.SelectedUser.FirstName</div>
+                }
+                @foreach (var m in Model.Thread)
+                {
+                    var mine = m.SenderId == Model.CurrentUserId;
+                    <div class="bubble @(mine ? "me" : "them")">
+                        @m.Content
+                        <span class="time">
+                            @Fmt.Stamp(m.Timestamp)
+                            @if (mine) { <i class="bi @(m.IsRead ? "bi-check2-all" : "bi-check2")" title="@(m.IsRead ? "Read" : "Sent")"></i> }
+                        </span>
+                    </div>
+                }
+            </div>
+            <form class="thread-form" asp-action="Send" method="post">
+                <input type="hidden" name="receiverId" value="@Model.SelectedUser.Id" />
+                <textarea name="content" class="form-control" rows="1" maxlength="2000" placeholder="Write a message..." required></textarea>
+                <button class="btn btn-brand"><i class="bi bi-send-fill"></i></button>
+            </form>
+        }
+    </div>
+</div>

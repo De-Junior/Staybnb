@@ -1,0 +1,63 @@
+@model List<HostApplication>
+@{
+    ViewData["Title"] = "Host Application Status";
+    var hasPending = Model.Any(a => a.Status == ApplicationStatus.Pending);
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <h1 class="h3 fw-bold mb-0">Your host applications</h1>
+    @if (!hasPending || User.IsInRole(Roles.Host))
+    {
+        <a class="btn btn-brand" asp-action="Create"><i class="bi bi-plus-lg"></i> @(User.IsInRole(Roles.Host) ? "Add property" : "Apply to host")</a>
+    }
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="empty-state">
+        <i class="bi bi-house-add"></i>
+        <h2 class="h5 text-dark mt-3">You haven't applied yet</h2>
+        <p>Share your space with travellers and earn extra income.</p>
+        <a class="btn btn-brand" asp-action="Create">Become a Host</a>
+    </div>
+}
+else
+{
+    <div class="d-flex flex-column gap-3">
+        @foreach (var app in Model)
+        {
+            var cover = app.Property.Images.OrderBy(i => i.DisplayOrder).FirstOrDefault();
+            <div class="listing-row d-flex flex-column flex-md-row">
+                @if (cover is not null)
+                {
+                    <img src="@cover.ImageUrl" alt="@app.Property.Title" class="thumb-lg m-3" />
+                }
+                <div class="body flex-grow-1">
+                    <div class="d-flex justify-content-between flex-wrap gap-2">
+                        <div>
+                            <h2 class="h6 fw-bold mb-1">@app.Property.Title</h2>
+                            <div class="small text-muted"><i class="bi bi-geo-alt"></i> @app.Property.City, @app.Property.Country &middot; @app.Property.PropertyType &middot; @Fmt.Money(app.Property.PricePerNight) / night</div>
+                        </div>
+                        <span class="@Fmt.Badge(app.Status)">@app.Status</span>
+                    </div>
+                    <div class="small text-muted mt-2">
+                        Applied @Fmt.Stamp(app.AppliedAt)
+                        @if (app.ReviewedAt.HasValue) { <text> &middot; Reviewed @Fmt.Stamp(app.ReviewedAt.Value)</text> }
+                    </div>
+                    @if (app.Status == ApplicationStatus.Pending)
+                    {
+                        <p class="small mb-0 mt-2"><i class="bi bi-hourglass-split"></i> An admin is reviewing your application. You'll get a notification when a decision is made.</p>
+                    }
+                    else if (app.Status == ApplicationStatus.Approved)
+                    {
+                        <p class="small mb-0 mt-2 text-success"><i class="bi bi-check-circle"></i> Approved! Your listing is live.</p>
+                    }
+                    else if (!string.IsNullOrEmpty(app.AdminNotes))
+                    {
+                        <p class="small mb-0 mt-2 text-danger"><i class="bi bi-info-circle"></i> @app.AdminNotes</p>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}

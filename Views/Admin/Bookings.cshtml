@@ -1,0 +1,37 @@
+@model List<Booking>
+@{
+    ViewData["Title"] = "Bookings";
+    var current = ViewBag.Status as BookingStatus?;
+}
+
+<div class="filter-pills mb-3">
+    <a class="@(current == null ? "active" : "")" asp-action="Bookings">All</a>
+    @foreach (var s in Enum.GetValues<BookingStatus>())
+    {
+        <a class="@(current == s ? "active" : "")" asp-action="Bookings" asp-route-status="@s">@s</a>
+    }
+</div>
+
+<div class="table-wrap">
+    <div class="table-responsive">
+        <table class="table table-clean">
+            <thead><tr><th>#</th><th>Guest</th><th>Property</th><th>Dates</th><th>Total</th><th>Service fee</th><th>Status</th><th>Payment</th></tr></thead>
+            <tbody>
+                @if (Model.Count == 0) { <tr><td colspan="8" class="text-center text-muted py-5">No bookings</td></tr> }
+                @foreach (var b in Model)
+                {
+                    <tr>
+                        <td>@b.Id</td>
+                        <td><div class="fw-semibold">@b.Guest.FullName</div><div class="small text-muted">@b.Guest.Email</div></td>
+                        <td>@b.Property.Title</td>
+                        <td class="small text-nowrap">@Fmt.Date(b.CheckInDate)<br /><span class="text-muted">to @Fmt.Date(b.CheckOutDate)</span></td>
+                        <td class="text-nowrap">@Fmt.Money(b.TotalPrice, 2)</td>
+                        <td class="text-nowrap">@Fmt.Money(b.ServiceFee, 2)</td>
+                        <td><span class="@Fmt.Badge(b.Status)">@b.Status</span></td>
+                        <td>@if (b.Payment is not null) { <span class="@Fmt.Badge(b.Payment.Status)">@b.Payment.Status</span> }</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,96 @@
+@model CheckInStepViewModel
+@{
+    ViewData["Title"] = "Online check in";
+    var booking = Model.CheckIn.Booking;
+    var step = Model.Step;
+    var cover = booking.Property.Images.OrderBy(i => i.DisplayOrder).FirstOrDefault();
+}
+
+<div class="row g-4 justify-content-center">
+    <div class="col-lg-7">
+        <a asp-controller="Bookings" asp-action="Details" asp-route-id="@booking.Id" class="small text-muted text-decoration-none"><i class="bi bi-arrow-left"></i> Back to trip</a>
+        <h1 class="h4 fw-bold mt-2">@Model.CheckIn.CheckInProcess.Title</h1>
+        <p class="text-muted small">Step @(Model.StepIndex + 1) of @Model.Steps.Count</p>
+
+        <div class="steps-bar">
+            @for (var i = 0; i < Model.Steps.Count; i++)
+            {
+                <div class="s @(i < Model.StepIndex ? "done" : i == Model.StepIndex ? "current" : "")" title="@Model.Steps[i].Title"></div>
+            }
+        </div>
+
+        <form asp-action="Step" asp-route-id="@Model.CheckIn.Id" method="post" enctype="multipart/form-data" class="panel">
+            <h2 class="h5 fw-bold">@step.Title</h2>
+            @if (!string.IsNullOrWhiteSpace(step.Instructions))
+            {
+                <p class="text-muted" style="white-space:pre-line">@step.Instructions</p>
+            }
+
+            @if (step.RequiresDocument)
+            {
+                var type = step.DocumentType ?? "ID or Passport";
+                if (Model.ExistingDocument is not null)
+                {
+                    <div class="alert alert-light border small d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-file-earmark-check text-success"></i> @type uploaded @Fmt.Ago(Model.ExistingDocument.UploadedAt)</span>
+                        <a asp-controller="Documents" asp-action="Open" asp-route-id="@Model.ExistingDocument.Id" target="_blank">View</a>
+                    </div>
+                    <p class="small text-muted">You can continue, or upload a replacement below.</p>
+                }
+                <div class="upload-drop">
+                    <i class="bi bi-person-vcard fs-2 text-muted"></i>
+                    <p class="small mb-2">Upload your <b>@type</b></p>
+                    <input type="file" name="document" class="form-control" accept=".jpg,.jpeg,.png,.pdf" data-preview="#doc-preview" @(Model.ExistingDocument is null ? "required" : "") />
+                    <div class="form-text">JPG, PNG or PDF, up to 5 MB. Only you, your host and Staybnb admins can see it.</div>
+                    <div id="doc-preview" class="image-previews justify-content-center"></div>
+                </div>
+            }
+            else
+            {
+                @if (Model.StepIndex == 0)
+                {
+                    <div class="border rounded-3 p-3 small mb-3">
+                        <div><b>@booking.Property.Title</b>, @booking.Property.City</div>
+                        <div>@Fmt.Date(booking.CheckInDate) to @Fmt.Date(booking.CheckOutDate) &middot; @booking.NumberOfGuests guest@(booking.NumberOfGuests == 1 ? "" : "s")</div>
+                    </div>
+                }
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="acknowledged" value="true" id="ack" required />
+                    <label class="form-check-label" for="ack">I have read and agree to this step</label>
+                </div>
+            }
+
+            <div class="d-flex justify-content-between mt-4">
+                @if (Model.StepIndex > 0)
+                {
+                    <button type="submit" name="direction" value="back" class="btn btn-soft" formnovalidate>Back</button>
+                }
+                else
+                {
+                    <span></span>
+                }
+                <button type="submit" name="direction" value="next" class="btn btn-brand px-4">@(Model.IsLastStep ? "Submit check in" : "Continue")</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="col-lg-4 d-none d-lg-block">
+        <div class="panel mt-5">
+            @if (cover is not null)
+            {
+                <img src="@cover.ImageUrl" class="w-100 rounded-3 mb-3" style="height:150px;object-fit:cover" alt="@booking.Property.Title" />
+            }
+            <div class="fw-semibold">@booking.Property.Title</div>
+            <div class="small text-muted mb-3">@booking.Property.City</div>
+            <ol class="small ps-3 mb-0">
+                @for (var i = 0; i < Model.Steps.Count; i++)
+                {
+                    <li class="@(i == Model.StepIndex ? "fw-bold" : i < Model.StepIndex ? "text-muted text-decoration-line-through" : "")">
+                        @Model.Steps[i].Title
+                        @if (Model.Steps[i].RequiresDocument) { <i class="bi bi-paperclip"></i> }
+                    </li>
+                }
+            </ol>
+        </div>
+    </div>
+</div>

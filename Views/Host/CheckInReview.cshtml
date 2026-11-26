@@ -1,0 +1,89 @@
+@model GuestCheckIn
+@{
+    ViewData["Title"] = "Verify Guest Check in";
+    var booking = Model.Booking;
+    var steps = Staybnb.Services.CheckInSteps.Parse(Model.CheckInProcess.StepsJson);
+    var canReview = Model.Status == CheckInStatus.Submitted;
+}
+
+<a asp-action="CheckIns" class="small text-muted text-decoration-none"><i class="bi bi-arrow-left"></i> All check ins</a>
+
+<div class="row g-4 mt-1">
+    <div class="col-lg-8">
+        <div class="panel mb-4">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h2 class="h5 fw-bold mb-1">@booking.Guest.FullName</h2>
+                    <div class="small text-muted">@booking.Guest.Email</div>
+                </div>
+                <span class="@Fmt.Badge(Model.Status)">@Model.Status</span>
+            </div>
+            <hr />
+            <div class="row small g-3">
+                <div class="col-sm-4"><div class="text-muted">Property</div><div class="fw-semibold">@booking.Property.Title</div></div>
+                <div class="col-sm-4"><div class="text-muted">Stay</div><div class="fw-semibold">@Fmt.Date(booking.CheckInDate) to @Fmt.Date(booking.CheckOutDate)</div></div>
+                <div class="col-sm-4"><div class="text-muted">Booking status</div><span class="@Fmt.Badge(booking.Status)">@booking.Status</span></div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">Uploaded documents</div>
+            @if (!canReview && Model.Status != CheckInStatus.Verified)
+            {
+                <p class="small text-muted">Documents can be verified once the guest submits check in. Current status: @Model.Status.</p>
+            }
+            @if (Model.Documents.Count == 0)
+            {
+                <p class="text-muted small mb-0">No documents uploaded yet.</p>
+            }
+            @foreach (var d in Model.Documents.OrderBy(d => d.UploadedAt))
+            {
+                var isPdf = d.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase);
+                <div class="border rounded-4 p-3 mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div><b>@d.DocumentType</b> <span class="small text-muted">uploaded @Fmt.Stamp(d.UploadedAt)</span></div>
+                        <span class="@Fmt.Badge(d.Status)">@d.Status</span>
+                    </div>
+                    @if (isPdf)
+                    {
+                        <a class="btn btn-soft btn-sm" asp-controller="Documents" asp-action="Open" asp-route-id="@d.Id" target="_blank"><i class="bi bi-file-earmark-pdf"></i> Open PDF</a>
+                    }
+                    else
+                    {
+                        <a asp-controller="Documents" asp-action="Open" asp-route-id="@d.Id" target="_blank">
+                            <img src="@Url.Action("Open", "Documents", new { id = d.Id })" alt="@d.DocumentType" class="rounded-3 border" style="max-width:100%;max-height:320px" />
+                        </a>
+                    }
+                    @if (canReview && d.Status == DocumentStatus.Pending)
+                    {
+                        <div class="d-flex gap-2 mt-3">
+                            <form asp-action="VerifyDocument" method="post">
+                                <input type="hidden" name="id" value="@d.Id" />
+                                <input type="hidden" name="approve" value="true" />
+                                <button class="btn btn-success btn-sm"><i class="bi bi-check-lg"></i> Verify</button>
+                            </form>
+                            <form asp-action="VerifyDocument" method="post" data-confirm="Reject this document? The guest will be asked to upload it again.">
+                                <input type="hidden" name="id" value="@d.Id" />
+                                <input type="hidden" name="approve" value="false" />
+                                <button class="btn btn-outline-danger btn-sm"><i class="bi bi-x-lg"></i> Reject</button>
+                            </form>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="panel">
+            <div class="panel-title">@Model.CheckInProcess.Title</div>
+            <ol class="small ps-3 mb-0">
+                @foreach (var s in steps)
+                {
+                    <li class="mb-1">@s.Title @if (s.RequiresDocument) { <span class="text-muted">(@s.DocumentType)</span> }</li>
+                }
+            </ol>
+        </div>
+        <a class="btn btn-soft w-100 mt-3" asp-controller="Messages" asp-action="Index" asp-route-with="@booking.GuestId"><i class="bi bi-chat-dots"></i> Message guest</a>
+    </div>
+</div>

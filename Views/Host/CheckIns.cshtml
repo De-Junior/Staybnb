@@ -1,0 +1,39 @@
+@model List<GuestCheckIn>
+@{
+    ViewData["Title"] = "Guest Check ins";
+}
+
+<div class="table-wrap">
+    <div class="table-responsive">
+        <table class="table table-clean">
+            <thead><tr><th>Guest</th><th>Property</th><th>Stay</th><th>Documents</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+                @if (Model.Count == 0)
+                {
+                    <tr><td colspan="6" class="text-center text-muted py-5">No guest check ins yet. Guests start online check in after you approve their booking.</td></tr>
+                }
+                @foreach (var c in Model)
+                {
+                    <tr>
+                        <td>@c.Booking.Guest.FullName</td>
+                        <td>@c.Booking.Property.Title</td>
+                        <td class="text-nowrap">@Fmt.Date(c.Booking.CheckInDate) to @Fmt.Date(c.Booking.CheckOutDate)</td>
+                        <td>
+                            @foreach (var d in c.Documents)
+                            {
+                                <span class="@Fmt.Badge(d.Status) me-1">@d.DocumentType: @d.Status</span>
+                            }
+                            @if (c.Documents.Count == 0) { <span class="text-muted small">None yet</span> }
+                        </td>
+                        <td><span class="@Fmt.Badge(c.Status)">@c.Status</span></td>
+                        <td class="text-end">
+                            <a class="btn @(c.Status == CheckInStatus.Submitted ? "btn-brand" : "btn-soft") btn-sm" asp-action="CheckInReview" asp-route-id="@c.Id">
+                                @(c.Status == CheckInStatus.Submitted ? "Verify" : "View")
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

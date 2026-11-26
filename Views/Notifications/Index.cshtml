@@ -1,0 +1,106 @@
+@model NotificationsViewModel
+@{
+    ViewData["Title"] = "Notifications";
+    var todayUtc = DateTime.UtcNow.Date;
+    var groups = Model.Notifications
+        .GroupBy(n => n.CreatedAt >= todayUtc ? "Today" : n.CreatedAt >= todayUtc.AddDays(-1) ? "Yesterday" : "Earlier")
+        .ToList();
+
+    (string Key, string Label, int Count, string Style)[] pills =
+    [
+        ("all", "All", Model.AllCount, "background:#f1f1f1"),
+        ("unread", "Unread", Model.UnreadCount, "background:#fde8ea;color:#c1253a"),
+        ("read", "Read", Model.ReadCount, "background:#e6f6ec;color:#1e7a3c"),
+        ("today", "Today", Model.TodayCount, "background:#fff4e0;color:#b25e00")
+    ];
+}
+
+<div class="panel p-0 overflow-hidden">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 p-3 border-bottom">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="fw-bold">Notifications</span>
+                @if (Model.UnreadCount > 0) { <span class="badge rounded-pill" style="background:var(--brand)">@Model.UnreadCount new</span> }
+            </div>
+            <div class="d-flex gap-2">
+                @foreach (var p in pills)
+                {
+                    <a class="count-pill @(Model.Filter == p.Key ? "active" : "")" style="@p.Style" asp-action="Index" asp-route-filter="@p.Key">
+                        <b>@p.Count</b><span>@p.Label</span>
+                    </a>
+                }
+            </div>
+        </div>
+        @if (Model.UnreadCount > 0)
+        {
+            <form asp-action="MarkAllRead" method="post">
+                <input type="hidden" name="filter" value="@Model.Filter" />
+                <button class="btn btn-soft btn-sm"><i class="bi bi-check2-all"></i> Mark all read</button>
+            </form>
+        }
+    </div>
+
+    <div class="row g-0">
+        <div class="col-lg-5 border-end" style="max-height:70vh;overflow-y:auto">
+            @if (Model.Notifications.Count == 0)
+            {
+                <div class="empty-state py-5"><i class="bi bi-bell-slash"></i><p class="mt-2 mb-0">Nothing here</p></div>
+            }
+            @foreach (var g in groups)
+            {
+                <div class="px-3 py-2 small fw-semibold text-muted bg-light text-uppercase" style="font-size:.7rem">@g.Key (@g.Count())</div>
+                @foreach (var n in g)
+                {
+                    <a class="notif-item @(n.IsRead ? "" : "unread") @(Model.Selected?.Id == n.Id ? "active" : "")"
+                       asp-action="Index" asp-route-filter="@Model.Filter" asp-route-selectedId="@n.Id">
+                        <i class="bi @Fmt.Icon(n.Type) fs-5"></i>
+                        <div class="flex-grow-1 overflow-hidden">
+                            <div class="d-flex justify-content-between gap-2">
+                                <span class="fw-semibold small">@n.Title</span>
+                                <span class="text-muted text-nowrap" style="font-size:.7rem">@Fmt.Ago(n.CreatedAt)</span>
+                            </div>
+                            <div class="body">@n.Body</div>
+                            <span class="badge-soft-secondary mt-1">@n.Type</span>
+                        </div>
+                    </a>
+                }
+            }
+        </div>
+
+        <div class="col-lg-7">
+            @if (Model.Selected is null)
+            {
+                <div class="empty-state"><i class="bi bi-hand-index"></i><p class="mt-2 mb-0">Select a notification to see the details.</p></div>
+            }
+            else
+            {
+                var n = Model.Selected;
+                <div class="p-4">
+                    <div class="d-flex justify-content-between align-items-start gap-2">
+                        <div class="d-flex gap-2">
+                            <i class="bi @Fmt.Icon(n.Type) fs-4"></i>
+                            <div>
+                                <div class="fw-bold">@n.Title</div>
+                                <div class="small text-muted">@Fmt.Stamp(n.CreatedAt) &middot; @Fmt.Ago(n.CreatedAt)</div>
+                            </div>
+                        </div>
+                        <span class="badge-soft-success">READ</span>
+                    </div>
+                    <div class="border rounded-4 p-3 my-4">@n.Body</div>
+                    <div class="d-flex gap-2">
+                        @if (!string.IsNullOrEmpty(n.LinkUrl))
+                        {
+                            <form asp-action="Open" asp-route-id="@n.Id" method="post">
+                                <button class="btn btn-brand btn-sm"><i class="bi bi-box-arrow-up-right"></i> Take Action</button>
+                            </form>
+                        }
+                        <form asp-action="Delete" asp-route-id="@n.Id" method="post" data-confirm="Delete this notification?">
+                            <input type="hidden" name="filter" value="@Model.Filter" />
+                            <button class="btn btn-danger btn-sm"><i class="bi bi-trash"></i> Delete</button>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

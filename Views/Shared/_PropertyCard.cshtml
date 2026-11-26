@@ -1,0 +1,42 @@
+@model PropertyCardViewModel
+@{
+    var canWishlist = ViewData["CanWishlist"] as bool? ?? false;
+    var returnUrl = Context.Request.Path + Context.Request.QueryString;
+}
+<div class="position-relative">
+    @if (canWishlist)
+    {
+        <form asp-controller="Wishlist" asp-action="Toggle" method="post">
+            <input type="hidden" name="propertyId" value="@Model.Id" />
+            <input type="hidden" name="returnUrl" value="@returnUrl" />
+            <button type="submit" class="heart-btn" title="@(Model.IsWishlisted ? "Remove from wishlist" : "Save to wishlist")">
+                <i class="bi @(Model.IsWishlisted ? "bi-heart-fill" : "bi-heart")"></i>
+            </button>
+        </form>
+    }
+    <a class="property-card" asp-controller="Properties" asp-action="Details" asp-route-id="@Model.Id">
+        <div class="card-gallery" data-gallery>
+            @if (Model.ImageUrls.Count == 0)
+            {
+                <div class="w-100 h-100 d-grid place-items-center text-muted"><i class="bi bi-image fs-1 m-auto"></i></div>
+            }
+            @foreach (var url in Model.ImageUrls)
+            {
+                <img src="@url" alt="@Model.Title" loading="lazy" />
+            }
+            @if (Model.ImageUrls.Count > 1)
+            {
+                <button type="button" class="gallery-nav prev" aria-label="Previous photo"><i class="bi bi-chevron-left"></i></button>
+                <button type="button" class="gallery-nav next" aria-label="Next photo"><i class="bi bi-chevron-right"></i></button>
+                <div class="gallery-dots">@for (var i = 0; i < Model.ImageUrls.Count; i++) { <span></span> }</div>
+            }
+            <span class="photo-count"><i class="bi bi-camera"></i> @Model.ImageUrls.Count</span>
+        </div>
+        <div class="card-meta">
+            <div class="loc"><i class="bi bi-geo-alt"></i> @Model.City, @Model.Country</div>
+            <div class="title">@Model.Title</div>
+            <div class="price"><b>@Fmt.Money(Model.PricePerNight)</b> <span class="text-muted">per night</span></div>
+            <div class="rating"><i class="bi bi-star-fill"></i> @Model.AverageRating.ToString("0.0") (@Model.ReviewCount)</div>
+        </div>
+    </a>
+</div>

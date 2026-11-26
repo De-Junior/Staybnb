@@ -1,0 +1,31 @@
+@model PropertyFormViewModel
+@{
+    var isHost = User.IsInRole(Roles.Host);
+    ViewData["Title"] = isHost ? "Add New Property" : "Become a Host";
+}
+
+<div class="row justify-content-center">
+    <div class="col-xl-9">
+        @if (!isHost)
+        {
+            <div class="mb-4">
+                <h1 class="h3 fw-bold">It's easy to get started on Staybnb</h1>
+                <p class="text-muted mb-0">Tell us about your place, add photos, and submit. An admin reviews every application. Once approved, your listing goes live and your account switches to a Host account.</p>
+            </div>
+        }
+        else
+        {
+            <p class="text-muted">New listings are reviewed by an admin before they go live.</p>
+        }
+
+        <form asp-controller="HostApplications" asp-action="Create" method="post" enctype="multipart/form-data">
+            <partial name="_PropertyFormFields" model="Model" />
+            <div class="d-flex justify-content-end gap-2 mb-5">
+                <a class="btn btn-soft" asp-controller="@(isHost ? "Host" : "Home")" asp-action="@(isHost ? "Properties" : "Index")">Cancel</a>
+                <button type="submit" class="btn btn-brand px-4">Submit application</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

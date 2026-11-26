@@ -1,0 +1,97 @@
+@model HostApplication
+@{
+    ViewData["Title"] = "Review Application";
+    var p = Model.Property;
+    var roles = ViewBag.ApplicantRoles as IList<string> ?? [];
+}
+
+<a asp-action="Applications" class="small text-muted text-decoration-none"><i class="bi bi-arrow-left"></i> All applications</a>
+
+<div class="row g-4 mt-1">
+    <div class="col-lg-8">
+        <div class="panel mb-4">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                <div>
+                    <h2 class="h4 fw-bold mb-1">@p.Title</h2>
+                    <div class="text-muted small"><i class="bi bi-geo-alt-fill"></i> @p.Address, @p.City, @p.Country</div>
+                </div>
+                <span class="@Fmt.Badge(Model.Status)">@Model.Status</span>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2 my-3">
+                @foreach (var img in p.Images.OrderBy(i => i.DisplayOrder))
+                {
+                    <a href="@img.ImageUrl" target="_blank"><img src="@img.ImageUrl" class="thumb-lg" style="width:150px;height:110px" alt="Property photo" /></a>
+                }
+            </div>
+
+            <div class="row small g-3 mb-3">
+                <div class="col-6 col-md-3"><div class="text-muted">Type</div><div class="fw-semibold">@p.PropertyType</div></div>
+                <div class="col-6 col-md-3"><div class="text-muted">Price / night</div><div class="fw-semibold">@Fmt.Money(p.PricePerNight, 2)</div></div>
+                <div class="col-6 col-md-3"><div class="text-muted">Cleaning fee</div><div class="fw-semibold">@Fmt.Money(p.CleaningFee, 2)</div></div>
+                <div class="col-6 col-md-3"><div class="text-muted">Capacity</div><div class="fw-semibold">@p.MaxGuests guests</div></div>
+                <div class="col-6 col-md-3"><div class="text-muted">Bedrooms</div><div class="fw-semibold">@p.Bedrooms</div></div>
+                <div class="col-6 col-md-3"><div class="text-muted">Beds</div><div class="fw-semibold">@p.Beds</div></div>
+                <div class="col-6 col-md-3"><div class="text-muted">Bathrooms</div><div class="fw-semibold">@p.Bathrooms</div></div>
+            </div>
+
+            <p style="white-space:pre-line">@p.Description</p>
+
+            @if (p.Amenities.Count > 0)
+            {
+                <div class="d-flex flex-wrap gap-2">
+                    @foreach (var a in p.Amenities.OrderBy(a => a.Name))
+                    {
+                        <span class="chip"><i class="bi @(a.IconClass ?? "bi-check2")"></i>@a.Name</span>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="panel mb-3">
+            <div class="panel-title">Applicant</div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="initials">@Fmt.Initials(Model.ApplicationUser.FirstName, Model.ApplicationUser.LastName)</span>
+                <div>
+                    <div class="fw-semibold">@Model.ApplicationUser.FullName</div>
+                    <div class="small text-muted">@Model.ApplicationUser.Email</div>
+                </div>
+            </div>
+            <div class="small mt-3">Current role: @foreach (var r in roles) { <span class="badge-soft-secondary me-1">@r</span> }</div>
+            <div class="small text-muted mt-2">Applied @Fmt.Stamp(Model.AppliedAt)</div>
+            @if (Model.ReviewedAt.HasValue)
+            {
+                <div class="small text-muted">Reviewed @Fmt.Stamp(Model.ReviewedAt.Value)</div>
+            }
+            <a class="btn btn-soft btn-sm mt-3" asp-controller="Messages" asp-action="Index" asp-route-with="@Model.ApplicationUserId"><i class="bi bi-chat-dots"></i> Message applicant</a>
+        </div>
+
+        @if (Model.Status == ApplicationStatus.Pending)
+        {
+            <div class="panel">
+                <div class="panel-title">Decision</div>
+                @if (roles.Contains(Roles.Guest))
+                {
+                    <p class="small text-muted">Approving publishes the listing and switches this user from <b>Guest</b> to <b>Host</b>.</p>
+                }
+                else
+                {
+                    <p class="small text-muted">This user is already a Host. Approving publishes this additional listing.</p>
+                }
+                <form method="post">
+                    <textarea name="notes" class="form-control mb-3" rows="3" maxlength="500" placeholder="Notes for the applicant (required reason if rejecting)"></textarea>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-success flex-fill" asp-action="ApproveApplication" asp-route-id="@Model.Id"><i class="bi bi-check-lg"></i> Approve</button>
+                        <button class="btn btn-outline-danger flex-fill" asp-action="RejectApplication" asp-route-id="@Model.Id"><i class="bi bi-x-lg"></i> Reject</button>
+                    </div>
+                </form>
+            </div>
+        }
+        else if (!string.IsNullOrEmpty(Model.AdminNotes))
+        {
+            <div class="panel"><div class="panel-title">Admin notes</div><p class="small mb-0">@Model.AdminNotes</p></div>
+        }
+    </div>
+</div>

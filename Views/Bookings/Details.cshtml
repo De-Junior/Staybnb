@@ -1,0 +1,163 @@
+@model Booking
+@{
+    ViewData["Title"] = $"Trip to {Model.Property.City}";
+    var cover = Model.Property.Images.OrderBy(i => i.DisplayOrder).FirstOrDefault();
+    var checkIn = Model.GuestCheckIn;
+    var hasReviewed = ViewBag.HasReviewed as bool? ?? false;
+    var canCancel = Model.Status is BookingStatus.Pending or BookingStatus.Approved && Model.CheckInDate.Date > DateTime.Today;
+    var statusFlow = new[] { BookingStatus.Pending, BookingStatus.Approved, BookingStatus.CheckedIn, BookingStatus.Completed };
+    var flowIndex = Array.IndexOf(statusFlow, Model.Status);
+}
+
+<a asp-action="Index" class="small text-muted text-decoration-none"><i class="bi bi-arrow-left"></i> All trips</a>
+
+<div class="row g-4 mt-1">
+    <div class="col-lg-7">
+        <div class="panel mb-4">
+            <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+                <div>
+                    <h1 class="h4 fw-bold mb-1">@Model.Property.Title</h1>
+                    <div class="text-muted small"><i class="bi bi-geo-alt"></i> @Model.Property.Address, @Model.Property.City</div>
+                </div>
+                <span class="@Fmt.Badge(Model.Status)">@Model.Status</span>
+            </div>
+
+            @if (flowIndex >= 0)
+            {
+                <div class="steps-bar mb-1">
+                    @for (var i = 0; i < statusFlow.Length; i++)
+                    {
+                        <div class="s @(i < flowIndex ? "done" : i == flowIndex ? "current" : "")" title="@statusFlow[i]"></div>
+                    }
+                </div>
+                <div class="d-flex justify-content-between small text-muted mb-3">
+                    @foreach (var s in statusFlow) { <span>@s</span> }
+                </div>
+            }
+
+            <div class="row small g-3">
+                <div class="col-6"><div class="text-muted">Check in</div><div class="fw-semibold">@Fmt.Date(Model.CheckInDate)</div></div>
+                <div class="col-6"><div class="text-muted">Checkout</div><div class="fw-semibold">@Fmt.Date(Model.CheckOutDate)</div></div>
+                <div class="col-6"><div class="text-muted">Guests</div><div class="fw-semibold">@Model.NumberOfGuests</div></div>
+                <div class="col-6"><div class="text-muted">Host</div><div class="fw-semibold">@Model.Property.Host.FullName</div></div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2 mt-4">
+                <a class="btn btn-soft btn-sm" asp-controller="Properties" asp-action="Details" asp-route-id="@Model.PropertyId"><i class="bi bi-house"></i> View listing</a>
+                <a class="btn btn-soft btn-sm" asp-controller="Messages" asp-action="Index" asp-route-with="@Model.Property.HostId"><i class="bi bi-chat-dots"></i> Message host</a>
+                @if (canCancel)
+                {
+                    <form asp-action="Cancel" asp-route-id="@Model.Id" method="post" data-confirm="Cancel this booking?">
+                        <button class="btn btn-outline-danger btn-sm"><i class="bi bi-x-circle"></i> Cancel booking</button>
+                    </form>
+                }
+            </div>
+        </div>
+
+        @* ---------- Check in ---------- *@
+        @if (Model.Status is BookingStatus.Approved or BookingStatus.CheckedIn or BookingStatus.Completed)
+        {
+            <div class="panel mb-4">
+                <div class="panel-title"><i class="bi bi-person-vcard"></i> Online check in</div>
+
+                @if (checkIn is null || checkIn.Status == CheckInStatus.NotStarted)
+                {
+                    <p class="small text-muted">Your host needs you to complete a few steps, including uploading your ID or passport, before you arrive.</p>
+                    <form asp-controller="CheckIn" asp-action="Start" method="post">
+                        <input type="hidden" name="bookingId" value="@Model.Id" />
+                        <button class="btn btn-brand">Start check in</button>
+                    </form>
+                }
+                else
+                {
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span>Status:</span> <span class="@Fmt.Badge(checkIn.Status)">@checkIn.Status</span>
+                    </div>
+
+                    @switch (checkIn.Status)
+                    {
+                        case CheckInStatus.InProgress:
+                            <form asp-controller="CheckIn" asp-action="Start" method="post">
+                                <input type="hidden" name="bookingId" value="@Model.Id" />
+                                <button class="btn btn-brand btn-sm">Continue check in</button>
+                            </form>
+                            break;
+                        case CheckInStatus.Submitted:
+                            <p class="small text-muted mb-0">Submitted. Your host is verifying your documents.</p>
+                            break;
+                        case CheckInStatus.Rejected:
+                            <p class="small text-danger">Your host could not verify a document. Please upload it again.</p>
+                            <form asp-controller="CheckIn" asp-action="Start" method="post">
+                                <input type="hidden" name="bookingId" value="@Model.Id" />
+                                <button class="btn btn-brand btn-sm">Restart check in</button>
+                            </form>
+                            break;
+                        case CheckInStatus.Verified:
+                            <p class="small text-success mb-0"><i class="bi bi-check-circle-fill"></i> Verified @(checkIn.CompletedAt.HasValue ? Fmt.Stamp(checkIn.CompletedAt.Value) : ""). You're checked in!</p>
+                            break;
+                    }
+
+                    @if (checkIn.Documents.Count > 0)
+                    {
+                        <ul class="list-unstyled small mt-3 mb-0">
+                            @foreach (var d in checkIn.Documents)
+                            {
+                                <li class="d-flex justify-content-between align-items-center border rounded-3 px-3 py-2 mb-2">
+                                    <a asp-controller="Documents" asp-action="Open" asp-route-id="@d.Id" target="_blank"><i class="bi bi-file-earmark-person"></i> @d.DocumentType</a>
+                                    <span class="@Fmt.Badge(d.Status)">@d.Status</span>
+                                </li>
+                            }
+                        </ul>
+                    }
+                }
+            </div>
+        }
+
+        @* ---------- Review ---------- *@
+        @if (Model.Status is BookingStatus.CheckedIn or BookingStatus.Completed)
+        {
+            <div class="panel">
+                <div class="panel-title"><i class="bi bi-star"></i> Review your stay</div>
+                @if (hasReviewed)
+                {
+                    <p class="small text-muted mb-0">Thanks, you've already reviewed this place.</p>
+                }
+                else
+                {
+                    <form asp-action="Review" method="post">
+                        <input type="hidden" name="BookingId" value="@Model.Id" />
+                        <div class="stars mb-2">
+                            @for (var i = 5; i >= 1; i--)
+                            {
+                                <input type="radio" id="star@(i)" name="Rating" value="@i" @(i == 5 ? "checked" : "") />
+                                <label for="star@(i)" title="@i stars"><i class="bi bi-star-fill"></i></label>
+                            }
+                        </div>
+                        <textarea name="Comment" class="form-control mb-2" rows="3" maxlength="1000" placeholder="How was your stay?"></textarea>
+                        <button class="btn btn-brand btn-sm">Submit review</button>
+                    </form>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="col-lg-5">
+        <div class="panel">
+            @if (cover is not null)
+            {
+                <img src="@cover.ImageUrl" alt="@Model.Property.Title" class="w-100 rounded-3 mb-3" style="height:180px;object-fit:cover" />
+            }
+            <div class="panel-title">Price details</div>
+            <div class="price-line"><span>@Fmt.Money(Model.PricePerNight) x @Model.Nights night@(Model.Nights == 1 ? "" : "s")</span><span>@Fmt.Money(Model.PricePerNight * Model.Nights)</span></div>
+            <div class="price-line"><span>Cleaning fee</span><span>@Fmt.Money(Model.CleaningFee)</span></div>
+            <div class="price-line"><span>Service fee</span><span>@Fmt.Money(Model.ServiceFee, 2)</span></div>
+            <div class="price-total"><span>Total (ZAR)</span><span>@Fmt.Money(Model.TotalPrice, 2)</span></div>
+            @if (Model.Payment is not null)
+            {
+                <div class="d-flex justify-content-between small mt-3">
+                    <span class="text-muted">Payment</span><span class="@Fmt.Badge(Model.Payment.Status)">@Model.Payment.Status</span>
+                </div>
+            }
+        </div>
+    </div>
+</div>

@@ -1,0 +1,59 @@
+@model ActivityLogsViewModel
+@{
+    ViewData["Title"] = "Activity Logs";
+}
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-6"><input name="search" value="@Model.Search" class="form-control" placeholder="Search action, details or email" /></div>
+    <div class="col-8 col-md-3">
+        <select name="type" class="form-select">
+            <option value="">All types</option>
+            @foreach (var t in Enum.GetValues<ActivityType>())
+            {
+                <option value="@t" selected="@(Model.Type == t)">@t</option>
+            }
+        </select>
+    </div>
+    <div class="col-4 col-md-3"><button class="btn btn-brand w-100"><i class="bi bi-funnel"></i> Filter</button></div>
+</form>
+
+<p class="small text-muted">@Model.TotalCount entr@(Model.TotalCount == 1 ? "y" : "ies")</p>
+
+<div class="table-wrap mb-3">
+    <div class="table-responsive">
+        <table class="table table-clean">
+            <thead><tr><th>Date</th><th>User</th><th>Action</th><th>Type</th><th>Details</th></tr></thead>
+            <tbody>
+                @if (Model.Logs.Count == 0)
+                {
+                    <tr><td colspan="5" class="text-center text-muted py-5">No activity found</td></tr>
+                }
+                @foreach (var log in Model.Logs)
+                {
+                    <tr>
+                        <td class="text-nowrap small">@Fmt.Stamp(log.CreatedAt)</td>
+                        <td>@(log.User?.Email ?? "System")</td>
+                        <td class="fw-semibold">@log.Action</td>
+                        <td><span class="badge-soft-secondary">@log.ActivityType</span></td>
+                        <td class="small text-muted">@log.Details</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (Model.TotalPages > 1)
+{
+    <nav>
+        <ul class="pagination pagination-sm justify-content-center">
+            <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
+                <a class="page-link" asp-action="ActivityLogs" asp-route-page="@(Model.Page - 1)" asp-route-type="@Model.Type" asp-route-search="@Model.Search">Previous</a>
+            </li>
+            <li class="page-item disabled"><span class="page-link">Page @Model.Page of @Model.TotalPages</span></li>
+            <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")">
+                <a class="page-link" asp-action="ActivityLogs" asp-route-page="@(Model.Page + 1)" asp-route-type="@Model.Type" asp-route-search="@Model.Search">Next</a>
+            </li>
+        </ul>
+    </nav>
+}

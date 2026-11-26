@@ -1,0 +1,97 @@
+@model HomeIndexViewModel
+@{
+    ViewData["Title"] = "Stays";
+    ViewData["CanWishlist"] = Model.CanWishlist;
+    var filtered = !string.IsNullOrWhiteSpace(Model.City) || Model.Type.HasValue || Model.Guests.HasValue;
+}
+
+<h1 class="hero-title mb-3">Relax. Unwind. Choose your next stay.</h1>
+
+<div class="tab-line">
+    <a class="active" asp-action="Index">Properties</a>
+    @if (!User.IsInRole(Roles.Host) && !User.IsInRole(Roles.Admin) && !User.IsInRole(Roles.SuperAdmin))
+    {
+        <a asp-controller="HostApplications" asp-action="Create">Become a Host</a>
+    }
+</div>
+
+@* Mobile search (the header pill is hidden on small screens) *@
+<form class="d-lg-none row g-2 mb-3" asp-action="Index" method="get">
+    <div class="col-12 col-sm-5"><input name="city" class="form-control" placeholder="City" value="@Model.City" /></div>
+    <div class="col-7 col-sm-4">
+        <select name="type" class="form-select">
+            <option value="">Any type</option>
+            @foreach (var type in Enum.GetValues<PropertyType>())
+            {
+                <option value="@type" selected="@(Model.Type == type)">@type</option>
+            }
+        </select>
+    </div>
+    <div class="col-5 col-sm-3"><button class="btn btn-brand w-100"><i class="bi bi-search"></i> Search</button></div>
+</form>
+
+<div class="d-flex flex-wrap gap-2 mb-4 align-items-center">
+    <a class="chip @(Model.Type == null ? "active" : "")" asp-action="Index" asp-route-city="@Model.City" asp-route-guests="@Model.Guests">All types</a>
+    @foreach (var type in Enum.GetValues<PropertyType>())
+    {
+        <a class="chip @(Model.Type == type ? "active" : "")" asp-action="Index" asp-route-type="@type" asp-route-city="@Model.City" asp-route-guests="@Model.Guests">@type</a>
+    }
+    @if (Model.Cities.Count > 0)
+    {
+        <span class="vr mx-1"></span>
+        @foreach (var city in Model.Cities)
+        {
+            <a class="chip @(string.Equals(Model.City, city, StringComparison.OrdinalIgnoreCase) ? "active" : "")" asp-action="Index" asp-route-city="@city" asp-route-type="@Model.Type">
+                <i class="bi bi-geo-alt"></i>@city
+            </a>
+        }
+    }
+    @if (filtered)
+    {
+        <a class="small ms-2" asp-action="Index">Clear filters</a>
+    }
+</div>
+
+@if (Model.Properties.Count == 0)
+{
+    <div class="empty-state">
+        <i class="bi bi-search"></i>
+        <h2 class="h5 text-dark mt-3">No stays match your search</h2>
+        <p>Try another city or property type.</p>
+        <a class="btn btn-soft" asp-action="Index">Show all stays</a>
+    </div>
+}
+else
+{
+    var first = (Model.Page - 1) * 12 + 1;
+    var last = first + Model.Properties.Count - 1;
+    <p class="text-muted small mb-3">
+        Showing @first to @last of @Model.TotalCount stay@(Model.TotalCount == 1 ? "" : "s")@(filtered ? " that match your search" : "")
+    </p>
+    <div class="property-grid">
+        @foreach (var property in Model.Properties)
+        {
+            <partial name="_PropertyCard" model="property" view-data="ViewData" />
+        }
+    </div>
+
+    @if (Model.TotalPages > 1)
+    {
+        <nav class="d-flex justify-content-center mt-5" aria-label="Listing pages">
+            <ul class="pagination listing-pagination">
+                <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-page="@(Model.Page - 1)" asp-route-city="@Model.City" asp-route-type="@Model.Type" asp-route-guests="@Model.Guests" aria-label="Previous page"><i class="bi bi-chevron-left"></i></a>
+                </li>
+                @for (var i = 1; i <= Model.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.Page ? "active" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-page="@i" asp-route-city="@Model.City" asp-route-type="@Model.Type" asp-route-guests="@Model.Guests">@i</a>
+                    </li>
+                }
+                <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-page="@(Model.Page + 1)" asp-route-city="@Model.City" asp-route-type="@Model.Type" asp-route-guests="@Model.Guests" aria-label="Next page"><i class="bi bi-chevron-right"></i></a>
+                </li>
+            </ul>
+        </nav>
+    }
+}

@@ -1,0 +1,71 @@
+@model AdminUsersViewModel
+@{
+    ViewData["Title"] = "Users";
+    var isSuperAdmin = User.IsInRole(Roles.SuperAdmin);
+}
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-6">
+        <input name="search" value="@Model.Search" class="form-control" placeholder="Search by name or email" />
+    </div>
+    <div class="col-8 col-md-3">
+        <select name="role" class="form-select">
+            <option value="">All roles</option>
+            @foreach (var r in Roles.All)
+            {
+                <option value="@r" selected="@(Model.Role == r)">@r</option>
+            }
+        </select>
+    </div>
+    <div class="col-4 col-md-3"><button class="btn btn-brand w-100"><i class="bi bi-search"></i> Search</button></div>
+</form>
+
+@if (isSuperAdmin)
+{
+    <div class="alert bg-brand-soft border-0 rounded-4 small"><i class="bi bi-shield-lock-fill text-brand"></i> As SuperAdmin you can promote Guests to Admin.</div>
+}
+
+<div class="table-wrap">
+    <div class="table-responsive">
+        <table class="table table-clean">
+            <thead><tr><th>User</th><th>Roles</th><th>Joined</th>@if (isSuperAdmin) { <th class="text-end">Actions</th> }</tr></thead>
+            <tbody>
+                @if (Model.Users.Count == 0)
+                {
+                    <tr><td colspan="4" class="text-center text-muted py-5">No users found</td></tr>
+                }
+                @foreach (var row in Model.Users)
+                {
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="initials">@Fmt.Initials(row.User.FirstName, row.User.LastName)</span>
+                                <div><div class="fw-semibold">@row.User.FullName</div><div class="small text-muted">@row.User.Email</div></div>
+                            </div>
+                        </td>
+                        <td>
+                            @foreach (var r in row.Roles)
+                            {
+                                <span class="@(r == Roles.SuperAdmin || r == Roles.Admin ? "badge-soft-danger" : r == Roles.Host ? "badge-soft-success" : "badge-soft-info") me-1">@r</span>
+                            }
+                        </td>
+                        <td class="small">@Fmt.Date(row.User.CreatedAt)</td>
+                        @if (isSuperAdmin)
+                        {
+                            <td class="text-end">
+                                @if (row.Roles.Contains(Roles.Guest))
+                                {
+                                    <form asp-action="PromoteToAdmin" method="post" data-confirm="Promote @row.User.FullName to Admin? They will no longer be a Guest.">
+                                        <input type="hidden" name="id" value="@row.User.Id" />
+                                        <input type="hidden" name="search" value="@Model.Search" />
+                                        <button class="btn btn-outline-brand btn-sm"><i class="bi bi-person-up"></i> Promote to Admin</button>
+                                    </form>
+                                }
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

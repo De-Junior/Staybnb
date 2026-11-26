@@ -1,0 +1,47 @@
+@model List<Booking>
+@{
+    ViewData["Title"] = "My trips";
+}
+<h1 class="h3 fw-bold mb-4">Trips</h1>
+
+@if (Model.Count == 0)
+{
+    <div class="empty-state">
+        <i class="bi bi-suitcase2"></i>
+        <h2 class="h5 text-dark mt-3">No trips booked... yet!</h2>
+        <p>Time to dust off your bags and start planning your next adventure.</p>
+        <a class="btn btn-brand" asp-controller="Home" asp-action="Index">Start searching</a>
+    </div>
+}
+else
+{
+    <div class="row g-3">
+        @foreach (var b in Model)
+        {
+            var cover = b.Property.Images.OrderBy(i => i.DisplayOrder).FirstOrDefault();
+            <div class="col-md-6 col-xl-4">
+                <a class="text-decoration-none" asp-action="Details" asp-route-id="@b.Id">
+                    <div class="listing-row h-100">
+                        @if (cover is not null)
+                        {
+                            <img src="@cover.ImageUrl" alt="@b.Property.Title" style="width:100%;height:170px;object-fit:cover" />
+                        }
+                        <div class="body">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <div class="fw-semibold">@b.Property.Title</div>
+                                <span class="@Fmt.Badge(b.Status)">@b.Status</span>
+                            </div>
+                            <div class="small text-muted">@b.Property.City</div>
+                            <div class="small mt-2"><i class="bi bi-calendar3"></i> @Fmt.Date(b.CheckInDate) to @Fmt.Date(b.CheckOutDate) &middot; @b.Nights night@(b.Nights == 1 ? "" : "s")</div>
+                            <div class="small"><i class="bi bi-people"></i> @b.NumberOfGuests guest@(b.NumberOfGuests == 1 ? "" : "s") &middot; <b>@Fmt.Money(b.TotalPrice)</b></div>
+                            @if (b.Status == BookingStatus.Approved && (b.GuestCheckIn is null || b.GuestCheckIn.Status is CheckInStatus.InProgress or CheckInStatus.Rejected or CheckInStatus.NotStarted))
+                            {
+                                <div class="small text-brand fw-semibold mt-2"><i class="bi bi-person-vcard"></i> Online check in required</div>
+                            }
+                        </div>
+                    </div>
+                </a>
+            </div>
+        }
+    </div>
+}

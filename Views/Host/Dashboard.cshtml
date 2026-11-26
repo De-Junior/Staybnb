@@ -1,0 +1,119 @@
+@model HostDashboardViewModel
+@{
+    ViewData["Title"] = "Host Dashboard";
+}
+
+<div class="welcome-card mb-4">
+    <h2>Welcome back, @Model.HostName!</h2>
+    <p class="text-muted small mb-3">Here's what's happening with your properties today.</p>
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-outline-brand btn-sm" asp-controller="HostApplications" asp-action="Create"><i class="bi bi-plus-lg"></i> Add New Property</a>
+        <a class="btn btn-outline-brand btn-sm" asp-action="Bookings"><i class="bi bi-calendar-check"></i> View Booking Requests</a>
+        <a class="btn btn-outline-brand btn-sm" asp-action="Earnings"><i class="bi bi-graph-up"></i> View Earnings Report</a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#e5f1fd;color:#1a62b4"><i class="bi bi-house-fill"></i></div>
+            <div class="stat-value">@Model.TotalProperties</div>
+            <div class="stat-label">Total Properties</div>
+            <div class="stat-sub text-success"><i class="bi bi-arrow-up"></i> @Model.ActiveProperties active</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#f3e8fb;color:#8a3fc2"><i class="bi bi-calendar-event-fill"></i></div>
+            <div class="stat-value">@Model.TotalBookings</div>
+            <div class="stat-label">Total Bookings</div>
+            <div class="stat-sub text-brand">@Model.BookingsThisMonth this month &middot; @Model.PendingRequests pending</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#e6f6ec;color:#1e7a3c"><i class="bi bi-cash-stack"></i></div>
+            <div class="stat-value">@Fmt.Money(Model.TotalEarnings)</div>
+            <div class="stat-label">Total Earnings</div>
+            <div class="stat-sub text-brand">@Fmt.Money(Model.EarningsThisMonth) this month</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#fff4e0;color:#b25e00"><i class="bi bi-star-fill"></i></div>
+            <div class="stat-value">@Model.AverageRating.ToString("0.0")</div>
+            <div class="stat-label">Average Rating</div>
+            <div class="stat-sub text-success"><i class="bi bi-chat-fill"></i> @Model.ReviewCount review@(Model.ReviewCount == 1 ? "" : "s")</div>
+        </div>
+    </div>
+</div>
+
+@if (Model.CheckInsToVerify > 0)
+{
+    <div class="alert bg-brand-soft border-0 rounded-4 d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-person-vcard text-brand"></i> <b>@Model.CheckInsToVerify</b> guest check in@(Model.CheckInsToVerify == 1 ? "" : "s") waiting for document verification.</span>
+        <a class="btn btn-brand btn-sm" asp-action="CheckIns">Review</a>
+    </div>
+}
+
+<div class="row g-4">
+    <div class="col-xl-6">
+        <div class="table-wrap">
+            <div class="p-3 fw-bold">Pending booking requests</div>
+            <div class="table-responsive">
+                <table class="table table-clean">
+                    <thead><tr><th>Guest</th><th>Property</th><th>Dates</th><th></th></tr></thead>
+                    <tbody>
+                        @if (Model.RecentRequests.Count == 0)
+                        {
+                            <tr><td colspan="4" class="text-center text-muted py-4">No pending requests</td></tr>
+                        }
+                        @foreach (var b in Model.RecentRequests)
+                        {
+                            <tr>
+                                <td>@b.Guest.FullName</td>
+                                <td>@b.Property.Title</td>
+                                <td class="text-nowrap">@b.CheckInDate.ToString("dd MMM") to @b.CheckOutDate.ToString("dd MMM")</td>
+                                <td class="text-end"><a asp-action="Bookings" asp-route-status="Pending" class="btn btn-soft btn-sm">Respond</a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <div class="table-wrap">
+            <div class="p-3 fw-bold">Upcoming stays</div>
+            <div class="table-responsive">
+                <table class="table table-clean">
+                    <thead><tr><th>Guest</th><th>Property</th><th>Dates</th><th>Check in</th></tr></thead>
+                    <tbody>
+                        @if (Model.UpcomingStays.Count == 0)
+                        {
+                            <tr><td colspan="4" class="text-center text-muted py-4">No upcoming stays</td></tr>
+                        }
+                        @foreach (var b in Model.UpcomingStays)
+                        {
+                            <tr>
+                                <td>@b.Guest.FullName</td>
+                                <td>@b.Property.Title</td>
+                                <td class="text-nowrap">@b.CheckInDate.ToString("dd MMM") to @b.CheckOutDate.ToString("dd MMM")</td>
+                                <td>
+                                    @if (b.GuestCheckIn is null)
+                                    {
+                                        <span class="badge-soft-secondary">Not started</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="@Fmt.Badge(b.GuestCheckIn.Status)">@b.GuestCheckIn.Status</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

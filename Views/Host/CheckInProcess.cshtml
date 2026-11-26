@@ -1,0 +1,64 @@
+@model CheckInProcessFormViewModel
+@{
+    ViewData["Title"] = "Check in Process";
+}
+
+<div class="row justify-content-center">
+    <div class="col-xl-8">
+        <p class="text-muted">Define the steps guests at <b>@Model.PropertyTitle</b> must complete before arrival. At least one step must ask for a document (such as an ID or passport) that you verify.</p>
+
+        <form asp-action="CheckInProcess" method="post">
+            <input type="hidden" asp-for="PropertyId" />
+            <div asp-validation-summary="All" class="alert alert-danger small"></div>
+
+            <div class="panel mb-3">
+                <label asp-for="Title" class="form-label"></label>
+                <input asp-for="Title" class="form-control" />
+            </div>
+
+            <div data-step-editor>
+                <div data-step-list>
+                    @foreach (var step in Model.Steps)
+                    {
+                        <div class="step-row">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-semibold">Step <span data-step-number></span></span>
+                                <button type="button" class="btn btn-sm btn-outline-danger" data-remove><i class="bi bi-trash"></i></button>
+                            </div>
+                            <input class="form-control mb-2" data-field="Title" placeholder="Step title" value="@step.Title" maxlength="100" required />
+                            <textarea class="form-control mb-2" data-field="Instructions" rows="2" placeholder="Instructions for the guest" maxlength="1000">@step.Instructions</textarea>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" data-field="RequiresDocument" checked="@step.RequiresDocument" />
+                                <label class="form-check-label small">Guest must upload a document in this step</label>
+                            </div>
+                            <input class="form-control mt-2" data-field="DocumentType" data-doc-type placeholder="Document type, e.g. ID or Passport" value="@step.DocumentType" maxlength="100" />
+                        </div>
+                    }
+                </div>
+
+                <template id="step-template">
+                    <div class="step-row">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-semibold">Step <span data-step-number></span></span>
+                            <button type="button" class="btn btn-sm btn-outline-danger" data-remove><i class="bi bi-trash"></i></button>
+                        </div>
+                        <input class="form-control mb-2" data-field="Title" placeholder="Step title" maxlength="100" required />
+                        <textarea class="form-control mb-2" data-field="Instructions" rows="2" placeholder="Instructions for the guest" maxlength="1000"></textarea>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" data-field="RequiresDocument" />
+                            <label class="form-check-label small">Guest must upload a document in this step</label>
+                        </div>
+                        <input class="form-control mt-2" data-field="DocumentType" data-doc-type placeholder="Document type, e.g. ID or Passport" maxlength="100" />
+                    </div>
+                </template>
+
+                <button type="button" class="btn btn-soft mb-4" data-add-step><i class="bi bi-plus-lg"></i> Add step</button>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mb-5">
+                <a class="btn btn-soft" asp-action="Properties">Cancel</a>
+                <button type="submit" class="btn btn-brand px-4">Save process</button>
+            </div>
+        </form>
+    </div>
+</div>
