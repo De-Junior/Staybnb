@@ -1,6 +1,53 @@
 # Staybnb
 
-An Airbnb-style property rental platform built with ASP.NET Core MVC (.NET 10), EF Core and SQL Server.
+[![CI](https://github.com/De-Junior/Staybnb/actions/workflows/ci.yml/badge.svg)](https://github.com/De-Junior/Staybnb/actions/workflows/ci.yml)
+
+An Airbnb-style property rental platform. Guests search and book places, hosts list and manage them, and admins review host applications and oversee the platform. Built with ASP.NET Core MVC (.NET 10), Entity Framework Core and SQL Server, and deployed on Azure.
+
+**Live demo:** https://staybnb-4hv0z.azurewebsites.net/ (hosted on a free Azure tier, so the first load after a quiet period can take about 30 seconds while it wakes up)
+
+## What it does
+
+- **Four roles** (Guest, Host, Admin, SuperAdmin) with role-based authorization and separate dashboards.
+- **Search by place and dates.** Guests filter by city, property type, number of guests and the dates they want, and only see places that are free for those nights.
+- **Booking engine** that prices a stay, blocks overlapping dates and runs a status flow from request to completed stay.
+- **Host onboarding:** guests apply to become hosts with a property and photos, and an admin approves or rejects the application.
+- **Online check-in:** after a booking is approved, the guest uploads ID documents that the host verifies. The documents are private.
+- **Messaging, notifications and an audit trail** of every important action.
+
+## Screenshots
+
+Searching for apartments free on 11 and 12 December. Places already booked for those nights drop out of the results:
+
+![Search by dates](docs/screenshots/search-by-dates.jpg)
+
+A listing page. The dates and guest count carry over from the search:
+
+![Listing page](docs/screenshots/listing.jpg)
+
+## Engineering notes
+
+These are the decisions behind the code, not just the feature list.
+
+- **No double bookings.** A stay holds the calendar for the nights in [check-in, check-out), so one guest can leave on the day another arrives. Approving a request checks the calendar and then takes it, so two approvals for the same property must not run that check at the same time. `BookingApprovalService` locks the property row inside a transaction, which makes concurrent approvals run one after the other. The second one then sees the first booking and is refused.
+- **Prices are a snapshot.** A booking stores the nightly price, cleaning fee and service fee it was made with, so later edits to a listing never change past bookings.
+- **Role changes are atomic.** Approving a host application activates the property and swaps the Guest role for Host in one database transaction, so a failure can never leave a half-promoted user.
+- **Private documents stay private.** ID and passport uploads are stored outside the web root and served by a controller that only allows the guest who uploaded them, the property's host, or an admin.
+- **Security by default.** Every POST action validates an anti-forgery token, controllers are locked down with role policies, uploads are checked for type and size, and the app refuses to start without seeded passwords rather than create accounts with a known one.
+- **Database rules, not just code rules.** A check constraint rejects a booking that ends before it starts, and ratings are constrained to 1 to 5.
+- **Auditable.** Logins, role changes, application decisions, property changes and every booking and check-in step are written to an activity log that admins can filter.
+
+## Tech stack
+
+ASP.NET Core MVC (.NET 10), C#, Entity Framework Core with migrations, SQL Server, ASP.NET Core Identity, Razor views, xUnit with in-memory SQLite for tests, GitHub Actions for CI, Azure App Service for hosting.
+
+## Tests
+
+```
+dotnet test
+```
+
+The tests run against a real in-memory SQLite database that uses the app's own EF Core model, so the queries and constraints they exercise are the ones the app runs. They cover the price calculation, calendar overlap (including back-to-back stays), booking approval, the host application role swap, and date-based search. GitHub Actions builds and runs them on every push.
 
 ## Running the app
 
@@ -33,7 +80,7 @@ To use another SQL Server instance, change `ConnectionStrings:DefaultConnection`
 
 To turn off the demo accounts and properties, set `Seed:DemoData` to `false`. The SuperAdmin is always seeded.
 
-## How the requirements are covered
+## Features in detail
 
 **Identity and role changes**
 - New users are registered with the `Guest` role.
