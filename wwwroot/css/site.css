@@ -51,6 +51,9 @@ a { color: inherit; }
     border: 0; outline: 0; background: transparent; font-size: .9rem; font-weight: 500; width: 115px;
 }
 .search-pill input[name=guests] { width: 95px; }
+.search-pill input[type=date] { width: 128px; color: var(--ink); }
+.search-pill input[name=city] { width: 100px; }
+.search-pill select { width: 95px; }
 .search-pill .divider { width: 1px; height: 24px; background: var(--line); margin: 0 .75rem; }
 .search-btn {
     width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--brand); color: #fff;

@@ -36,6 +36,10 @@
                     }
                 </select>
                 <span class="divider"></span>
+                <input name="checkIn" type="date" min="@DateTime.Today.ToString("yyyy-MM-dd")" value="@Context.Request.Query["checkIn"]" aria-label="Check in" title="Check in" />
+                <span class="divider"></span>
+                <input name="checkOut" type="date" min="@DateTime.Today.ToString("yyyy-MM-dd")" value="@Context.Request.Query["checkOut"]" aria-label="Check out" title="Check out" />
+                <span class="divider"></span>
                 <input name="guests" type="number" min="1" max="50" placeholder="Add guests" value="@Context.Request.Query["guests"]" aria-label="Guests" />
                 <button type="submit" class="search-btn" aria-label="Search"><i class="bi bi-search"></i></button>
             </form>

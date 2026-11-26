@@ -14,7 +14,7 @@
             </button>
         </form>
     }
-    <a class="property-card" asp-controller="Properties" asp-action="Details" asp-route-id="@Model.Id">
+    <a class="property-card" asp-controller="Properties" asp-action="Details" asp-route-id="@Model.Id" asp-route-checkIn="@(ViewData["CheckIn"] as string)" asp-route-checkOut="@(ViewData["CheckOut"] as string)" asp-route-guests="@(ViewData["Guests"] as int?)">
         <div class="card-gallery" data-gallery>
             @if (Model.ImageUrls.Count == 0)
             {

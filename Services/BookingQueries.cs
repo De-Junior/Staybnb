@@ -10,4 +10,12 @@ public static class BookingQueries
                             && (b.Status == BookingStatus.Approved || b.Status == BookingStatus.CheckedIn)
                             && b.CheckInDate < checkOut
                             && b.CheckOutDate > checkIn);
+
+    // Properties with no booking holding the calendar for any night in [checkIn, checkOut).
+    // Same rule as Overlapping, written out so EF can translate it as one NOT EXISTS query.
+    public static IQueryable<HostProperty> AvailableBetween(this IQueryable<HostProperty> properties, IQueryable<Booking> bookings, DateTime checkIn, DateTime checkOut) =>
+        properties.Where(p => !bookings.Any(b => b.PropertyId == p.Id
+                                                 && (b.Status == BookingStatus.Approved || b.Status == BookingStatus.CheckedIn)
+                                                 && b.CheckInDate < checkOut
+                                                 && b.CheckOutDate > checkIn));
 }

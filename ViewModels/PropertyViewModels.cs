@@ -24,6 +24,9 @@ public class HomeIndexViewModel
     public string? City { get; set; }
     public PropertyType? Type { get; set; }
     public int? Guests { get; set; }
+    public DateTime? CheckIn { get; set; }
+    public DateTime? CheckOut { get; set; }
+    public string? DateMessage { get; set; }
     public bool CanWishlist { get; set; }
     public int Page { get; set; } = 1;
     public int TotalPages { get; set; } = 1;

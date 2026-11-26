@@ -2,7 +2,10 @@
 @{
     ViewData["Title"] = "Stays";
     ViewData["CanWishlist"] = Model.CanWishlist;
-    var filtered = !string.IsNullOrWhiteSpace(Model.City) || Model.Type.HasValue || Model.Guests.HasValue;
+    var filtered = !string.IsNullOrWhiteSpace(Model.City) || Model.Type.HasValue || Model.Guests.HasValue || Model.CheckIn.HasValue || Model.CheckOut.HasValue;
+    ViewData["CheckIn"] = Model.CheckIn?.ToString("yyyy-MM-dd");
+    ViewData["CheckOut"] = Model.CheckOut?.ToString("yyyy-MM-dd");
+    ViewData["Guests"] = Model.Guests;
 }
 
 <h1 class="hero-title mb-3">Relax. Unwind. Choose your next stay.</h1>
@@ -27,14 +30,25 @@
             }
         </select>
     </div>
-    <div class="col-5 col-sm-3"><button class="btn btn-brand w-100"><i class="bi bi-search"></i> Search</button></div>
+    <div class="col-6 col-sm-4"><input name="checkIn" type="date" class="form-control" aria-label="Check in" min="@DateTime.Today.ToString("yyyy-MM-dd")" value="@Model.CheckIn?.ToString("yyyy-MM-dd")" /></div>
+    <div class="col-6 col-sm-4"><input name="checkOut" type="date" class="form-control" aria-label="Check out" min="@DateTime.Today.ToString("yyyy-MM-dd")" value="@Model.CheckOut?.ToString("yyyy-MM-dd")" /></div>
+    <div class="col-12 col-sm-4"><button class="btn btn-brand w-100"><i class="bi bi-search"></i> Search</button></div>
 </form>
 
+@if (Model.DateMessage is not null)
+{
+    <div class="alert alert-warning py-2" role="alert">@Model.DateMessage</div>
+}
+else if (Model.CheckIn.HasValue && Model.CheckOut.HasValue)
+{
+    <p class="text-muted small mb-3">Showing places free from @Model.CheckIn.Value.ToString("d MMM yyyy") to @Model.CheckOut.Value.ToString("d MMM yyyy").</p>
+}
+
 <div class="d-flex flex-wrap gap-2 mb-4 align-items-center">
-    <a class="chip @(Model.Type == null ? "active" : "")" asp-action="Index" asp-route-city="@Model.City" asp-route-guests="@Model.Guests">All types</a>
+    <a class="chip @(Model.Type == null ? "active" : "")" asp-action="Index" asp-route-city="@Model.City" asp-route-guests="@Model.Guests" asp-route-checkIn="@Model.CheckIn?.ToString("yyyy-MM-dd")" asp-route-checkOut="@Model.CheckOut?.ToString("yyyy-MM-dd")">All types</a>
     @foreach (var type in Enum.GetValues<PropertyType>())
     {
-        <a class="chip @(Model.Type == type ? "active" : "")" asp-action="Index" asp-route-type="@type" asp-route-city="@Model.City" asp-route-guests="@Model.Guests">@type</a>
+        <a class="chip @(Model.Type == type ? "active" : "")" asp-action="Index" asp-route-type="@type" asp-route-city="@Model.City" asp-route-guests="@Model.Guests" asp-route-checkIn="@Model.CheckIn?.ToString("yyyy-MM-dd")" asp-route-checkOut="@Model.CheckOut?.ToString("yyyy-MM-dd")">@type</a>
     }
     @if (Model.Cities.Count > 0)
     {
@@ -80,16 +94,16 @@ else
         <nav class="d-flex justify-content-center mt-5" aria-label="Listing pages">
             <ul class="pagination listing-pagination">
                 <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
-                    <a class="page-link" asp-action="Index" asp-route-page="@(Model.Page - 1)" asp-route-city="@Model.City" asp-route-type="@Model.Type" asp-route-guests="@Model.Guests" aria-label="Previous page"><i class="bi bi-chevron-left"></i></a>
+                    <a class="page-link" asp-action="Index" asp-route-page="@(Model.Page - 1)" asp-route-city="@Model.City" asp-route-type="@Model.Type" asp-route-guests="@Model.Guests" asp-route-checkIn="@Model.CheckIn?.ToString("yyyy-MM-dd")" asp-route-checkOut="@Model.CheckOut?.ToString("yyyy-MM-dd")" aria-label="Previous page"><i class="bi bi-chevron-left"></i></a>
                 </li>
                 @for (var i = 1; i <= Model.TotalPages; i++)
                 {
                     <li class="page-item @(i == Model.Page ? "active" : "")">
-                        <a class="page-link" asp-action="Index" asp-route-page="@i" asp-route-city="@Model.City" asp-route-type="@Model.Type" asp-route-guests="@Model.Guests">@i</a>
+                        <a class="page-link" asp-action="Index" asp-route-page="@i" asp-route-city="@Model.City" asp-route-type="@Model.Type" asp-route-guests="@Model.Guests" asp-route-checkIn="@Model.CheckIn?.ToString("yyyy-MM-dd")" asp-route-checkOut="@Model.CheckOut?.ToString("yyyy-MM-dd")">@i</a>
                     </li>
                 }
                 <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")">
-                    <a class="page-link" asp-action="Index" asp-route-page="@(Model.Page + 1)" asp-route-city="@Model.City" asp-route-type="@Model.Type" asp-route-guests="@Model.Guests" aria-label="Next page"><i class="bi bi-chevron-right"></i></a>
+                    <a class="page-link" asp-action="Index" asp-route-page="@(Model.Page + 1)" asp-route-city="@Model.City" asp-route-type="@Model.Type" asp-route-guests="@Model.Guests" asp-route-checkIn="@Model.CheckIn?.ToString("yyyy-MM-dd")" asp-route-checkOut="@Model.CheckOut?.ToString("yyyy-MM-dd")" aria-label="Next page"><i class="bi bi-chevron-right"></i></a>
                 </li>
             </ul>
         </nav>
